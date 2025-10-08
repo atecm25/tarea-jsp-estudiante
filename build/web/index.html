@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Sistema de Estudiantes</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { background-color: #f8f9fa; }
+        nav.navbar { background-color: #212529; }
+        nav.navbar .navbar-brand { color: #fff; font-weight: 600; }
+        .contenedor { max-width: 1000px; margin: 30px auto; background-color: #fff; padding: 20px 25px; border-radius: 6px; box-shadow: 0 2px 8px rgba(0,0,0,0.15);}
+        h2 { font-size: 1.5rem; font-weight: 600; }
+        table th, table td { padding: 10px; text-align:center; vertical-align:middle; }
+        .modal-dialog { max-width: 400px; }
+        .modal-title { font-size:1.2rem; font-weight:600; }
+        label { font-weight:500; margin-bottom:3px; }
+        .modal-footer { justify-content:center; }
+        .btn-accion { margin-right: 3px; }
+    </style>
+</head>
+<body>
+
+<nav class="navbar">
+    <div class="container">
+        <a class="navbar-brand" href="#">Sistema de Estudiantes</a>
+    </div>
+</nav>
+
+<div class="contenedor">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2>Listado de Estudiantes</h2>
+        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalForm" onclick="abrirNuevo()">+ Nuevo Estudiante</button>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table table-bordered table-striped" id="tablaEstudiantes">
+            <thead class="table-dark">
+                <tr>
+                    <th>ID</th>
+                    <th>Carné</th>
+                    <th>Nombres</th>
+                    <th>Apellidos</th>
+                    <th>Teléfono</th>
+                    <th>Correo</th>
+                    <th>Tipo de Sangre</th>
+                    <th>Nacimiento</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Datos se agregan desde JavaScript -->
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Modal -->
+<div class="modal fade" id="modalForm" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <form id="formEstudiante">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="tituloModal">Nuevo Estudiante</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" id="id_estudiante">
+                    <div class="mb-3">
+                        <label>Carné</label>
+                        <input type="text" class="form-control" id="carne" pattern="E[0-9]{3}" required title="Ejemplo: E001">
+                    </div>
+                    <div class="mb-3">
+                        <label>Nombres</label>
+                        <input type="text" class="form-control" id="nombres" required>
+                    </div>
+                    <div class="mb-3">
+                        <label>Apellidos</label>
+                        <input type="text" class="form-control" id="apellidos" required>
+                    </div>
+                    <div class="mb-3">
+                        <label>Teléfono</label>
+                        <input type="text" class="form-control" id="telefono">
+                    </div>
+                    <div class="mb-3">
+                        <label>Correo</label>
+                        <input type="email" class="form-control" id="correo">
+                    </div>
+                    <div class="mb-3">
+                        <label>Tipo de Sangre</label>
+                        <select class="form-select" id="tipo_sangre">
+                            <option value="">--Seleccione--</option>
+                            <option value="A+">A+</option>
+                            <option value="A-">A-</option>
+                            <option value="B+">B+</option>
+                            <option value="B-">B-</option>
+                            <option value="AB+">AB+</option>
+                            <option value="AB-">AB-</option>
+                            <option value="O+">O+</option>
+                            <option value="O-">O-</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="submit" class="btn btn-success" id="btnGuardar">Guardar</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+let estudiantes = [];
+let editandoId = null;
+
+// Abrir modal para nuevo estudiante
+function abrirNuevo(){
+    editandoId = null;
+    document.getElementById('formEstudiante').reset();
+    document.getElementById('tituloModal').innerText = 'Nuevo Estudiante';
+}
+
+// Renderizar tabla
+function renderTabla(){
+    const tbody = document.querySelector('#tablaEstudiantes tbody');
+    tbody.innerHTML = '';
+    estudiantes.forEach(est => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td>${est.id}</td>
+            <td>${est.carne}</td>
+            <td>${est.nombres}</td>
+            <td>${est.apellidos}</td>
+            <td>${est.telefono}</td>
+            <td>${est.correo}</td>
+            <td>${est.tipo_sangre}</td>
+            <td>
+                <button class="btn btn-sm btn-success btn-accion" onclick="abrirNuevo()">Agregar</button>
+                <button class="btn btn-sm btn-primary btn-accion" onclick="editarEstudiante(${est.id})">Editar</button>
+                <button class="btn btn-sm btn-danger btn-accion" onclick="eliminarEstudiante(${est.id})">Eliminar</button>
+            </td>
+        `;
+        tbody.appendChild(tr);
+    });
+}
+
+// Guardar o editar estudiante
+document.getElementById('formEstudiante').addEventListener('submit', function(e){
+    e.preventDefault();
+    const estudiante = {
+        id: editandoId ?? (estudiantes.length ? estudiantes[estudiantes.length-1].id + 1 : 1),
+        carne: document.getElementById('carne').value,
+        nombres: document.getElementById('nombres').value,
+        apellidos: document.getElementById('apellidos').value,
+        telefono: document.getElementById('telefono').value,
+        correo: document.getElementById('correo').value,
+        tipo_sangre: document.getElementById('tipo_sangre').value
+    };
+    if(editandoId){
+        estudiantes = estudiantes.map(est => est.id === editandoId ? estudiante : est);
+    } else {
+        estudiantes.push(estudiante);
+    }
+    renderTabla();
+    bootstrap.Modal.getInstance(document.getElementById('modalForm')).hide();
+});
+
+// Editar estudiante
+function editarEstudiante(id){
+    editandoId = id;
+    const est = estudiantes.find(e => e.id === id);
+    document.getElementById('carne').value = est.carne;
+    document.getElementById('nombres').value = est.nombres;
+    document.getElementById('apellidos').value = est.apellidos;
+    document.getElementById('telefono').value = est.telefono;
+    document.getElementById('correo').value = est.correo;
+    document.getElementById('tipo_sangre').value = est.tipo_sangre;
+    document.getElementById('tituloModal').innerText = 'Editar Estudiante';
+    const modal = new bootstrap.Modal(document.getElementById('modalForm'));
+    modal.show();
+}
+
+// Eliminar estudiante
+function eliminarEstudiante(id){
+    if(confirm('¿Desea eliminar este estudiante?')){
+        estudiantes = estudiantes.filter(e => e.id !== id);
+        renderTabla();
+    }
+}
+
+// Render inicial
+renderTabla();
+</script>
+</body>
+</html>
